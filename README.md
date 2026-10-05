@@ -2,6 +2,8 @@
 
 Find the greenest time to run your appliances. Carbon Helper reads the half-hourly forecast for Great Britain's electricity grid and tells you when a washing machine, dishwasher, tumble dryer or EV charge would cause the least CO₂.
 
+**Live app:** [carbon-helper.vercel.app](https://carbon-helper.vercel.app)
+
 ## What it shows
 
 - The grid's carbon intensity right now (gCO₂/kWh) and the current generation mix.
