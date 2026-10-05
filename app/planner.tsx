@@ -47,7 +47,9 @@ export function Planner({ slots }: { slots: Slot[] }) {
   const appliance = APPLIANCES.find((a) => a.id === applianceId)!;
   const visible = slots.slice(0, horizon * 2);
   const best = findBestWindow(visible, appliance.slots);
-  const max = Math.max(...visible.map((slot) => slot.forecast), 1);
+  const peak = Math.max(...visible.map((slot) => slot.forecast));
+  // Regional forecasts can be zero throughout; avoid dividing by it.
+  const max = Math.max(peak, 1);
 
   const inBest = (i: number) =>
     best !== null && i >= best.start && i < best.start + best.length;
@@ -108,7 +110,7 @@ export function Planner({ slots }: { slots: Slot[] }) {
           <p className="tabular-nums" aria-live="polite">
             {detail
               ? `${dayTime(detail.from)}–${time(detail.to)} · ${detail.forecast} gCO₂/kWh · ${detail.index}`
-              : `Peak ${max} gCO₂/kWh · hover a bar for detail`}
+              : `Peak ${peak} gCO₂/kWh · hover a bar for detail`}
           </p>
         </div>
 

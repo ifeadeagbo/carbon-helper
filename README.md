@@ -5,6 +5,7 @@ Find the greenest time to run your appliances. Carbon Helper reads the half-hour
 ## What it shows
 
 - The grid's carbon intensity right now (gCO₂/kWh) and the current generation mix.
+- The same for your own region if you enter a postcode (`/?postcode=SW1A`). Regional figures are forecasts; an unrecognised postcode falls back to Great Britain.
 - The cleanest window to start a chosen appliance within the next 12, 24 or 48 hours, and how much CO₂ that saves compared with starting now.
 - The forecast as a bar chart, with the best window highlighted, and as a table.
 
@@ -23,7 +24,7 @@ Other scripts: `npm run build`, `npm run start`, `npm run lint`, `npm test`.
 
 ## How it works
 
-- `lib/carbon.ts` fetches the national forecast and generation mix from the [Carbon Intensity API](https://carbonintensity.org.uk), run by the National Energy System Operator. Responses are cached for five minutes.
+- `lib/carbon.ts` fetches the national and regional forecasts and generation mix from the [Carbon Intensity API](https://carbonintensity.org.uk), run by the National Energy System Operator. Responses are cached for five minutes.
 - `lib/planner.ts` finds the run of consecutive half-hour slots with the lowest average forecast intensity.
 - `app/page.tsx` renders the current figures on the server; `app/planner.tsx` is the interactive planner.
 
