@@ -12,7 +12,18 @@ const APPLIANCES = [
   { id: "ev", label: "EV charge (4h at 7kW)", slots: 8, kwh: 28 },
 ];
 
+const CUSTOM_ID = "custom";
+// Run times offered for a custom appliance, in half-hour slots (30 min to 12 hours).
+const CUSTOM_SLOTS = Array.from({ length: 24 }, (_, i) => i + 1);
+const MAX_CUSTOM_KWH = 100;
+
 const HORIZONS = [12, 24, 48];
+
+const durationLabel = (slots: number) =>
+  slots === 1 ? "30 minutes" : slots === 2 ? "1 hour" : `${slots / 2} hours`;
+
+const INPUT_CLASS =
+  "rounded-md border border-grid bg-background px-3 py-2 text-base text-foreground";
 
 export const INDEX_COLOR: Record<IntensityIndex, string> = {
   "very low": "var(--status-good)",
@@ -44,7 +55,17 @@ export function Planner({ slots }: { slots: Slot[] }) {
   const [horizon, setHorizon] = useState(24);
   const [hovered, setHovered] = useState<number | null>(null);
 
-  const appliance = APPLIANCES.find((a) => a.id === applianceId)!;
+  const [customSlots, setCustomSlots] = useState(2);
+  const [customKwh, setCustomKwh] = useState("1");
+
+  const isCustom = applianceId === CUSTOM_ID;
+  const parsedKwh = Number(customKwh);
+  const customKwhValid =
+    customKwh.trim() !== "" && parsedKwh > 0 && parsedKwh <= MAX_CUSTOM_KWH;
+  // kwh is null while the custom energy figure isn't usable.
+  const appliance = isCustom
+    ? { slots: customSlots, kwh: customKwhValid ? parsedKwh : null }
+    : APPLIANCES.find((a) => a.id === applianceId)!;
   const visible = slots.slice(0, horizon * 2);
   const best = findBestWindow(visible, appliance.slots);
   const peak = Math.max(...visible.map((slot) => slot.forecast));
@@ -63,21 +84,54 @@ export function Planner({ slots }: { slots: Slot[] }) {
           <select
             value={applianceId}
             onChange={(e) => setApplianceId(e.target.value)}
-            className="rounded-md border border-grid bg-background px-3 py-2 text-base text-foreground"
+            className={INPUT_CLASS}
           >
             {APPLIANCES.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.label}
               </option>
             ))}
+            <option value={CUSTOM_ID}>Something else…</option>
           </select>
         </label>
+        {isCustom && (
+          <>
+            <label className="flex flex-col gap-1 text-sm text-muted">
+              that runs for
+              <select
+                value={customSlots}
+                onChange={(e) => setCustomSlots(Number(e.target.value))}
+                className={INPUT_CLASS}
+              >
+                {CUSTOM_SLOTS.map((n) => (
+                  <option key={n} value={n}>
+                    {durationLabel(n)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm text-muted">
+              and uses (kWh)
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0.1}
+                max={MAX_CUSTOM_KWH}
+                step={0.1}
+                value={customKwh}
+                onChange={(e) => setCustomKwh(e.target.value)}
+                aria-invalid={!customKwhValid}
+                className={`${INPUT_CLASS} w-28`}
+              />
+            </label>
+          </>
+        )}
         <label className="flex flex-col gap-1 text-sm text-muted">
           finishing within
           <select
             value={horizon}
             onChange={(e) => setHorizon(Number(e.target.value))}
-            className="rounded-md border border-grid bg-background px-3 py-2 text-base text-foreground"
+            className={INPUT_CLASS}
           >
             {HORIZONS.map((h) => (
               <option key={h} value={h}>
@@ -181,10 +235,12 @@ function Recommendation({
 }: {
   slots: Slot[];
   best: { start: number; length: number; average: number };
-  kwh: number;
+  /** Energy per cycle, or null if unknown (grams saved are then left out). */
+  kwh: number | null;
 }) {
   const nowAverage = averageIntensity(slots.slice(0, best.length));
-  const savedGrams = Math.round((nowAverage - best.average) * kwh);
+  const savedGrams =
+    kwh === null ? null : Math.round((nowAverage - best.average) * kwh);
   const savedPercent = Math.round((1 - best.average / nowAverage) * 100);
   const first = slots[best.start];
   const last = slots[best.start + best.length - 1];
@@ -200,9 +256,11 @@ function Recommendation({
         </span>
       </p>
       <p className="mt-2 text-sm text-muted">
-        {best.start === 0 || savedGrams <= 0
+        {best.start === 0 || (savedGrams ?? savedPercent) <= 0
           ? `It won't get cleaner than right now (about ${Math.round(best.average)} gCO₂/kWh).`
-          : `About ${Math.round(best.average)} gCO₂/kWh instead of ${Math.round(nowAverage)} if you started now: roughly ${savedGrams.toLocaleString("en-GB")} g CO₂ saved (${savedPercent}% less).`}
+          : savedGrams === null
+            ? `About ${Math.round(best.average)} gCO₂/kWh instead of ${Math.round(nowAverage)} if you started now (${savedPercent}% less). Enter the energy use, between 0.1 and ${MAX_CUSTOM_KWH} kWh, to see the CO₂ saved.`
+            : `About ${Math.round(best.average)} gCO₂/kWh instead of ${Math.round(nowAverage)} if you started now: roughly ${savedGrams.toLocaleString("en-GB")} g CO₂ saved (${savedPercent}% less).`}
       </p>
     </div>
   );
