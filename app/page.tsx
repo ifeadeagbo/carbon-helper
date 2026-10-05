@@ -8,8 +8,24 @@ import {
 } from "@/lib/carbon";
 import { POSTCODE_COOKIE } from "@/lib/postcode-cookie";
 import { clearPostcode, savePostcode } from "./actions";
+import { averageIntensity, findBestWindow } from "@/lib/planner";
 import { PLANNER_COOKIE, parsePlannerPrefs } from "@/lib/planner-prefs";
 import { Planner } from "./planner";
+
+const RECOMMENDED_APPLIANCE = {
+  id: "washer",
+  label: "Washing machine",
+  slots: 3,
+  kwh: 0.8,
+};
+
+const dayTime = (iso: string) =>
+  new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
 
 /** Loads the forecast for the postcode's region, or for Great Britain (region: null). */
 async function loadData(outwardCode: string | null) {
@@ -37,42 +53,61 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     "";
   const outwardCode = parseOutwardCode(query);
   const data = await loadData(outwardCode);
+  const summary =
+    data && data.slots.length > 0
+      ? (() => {
+          const best = findBestWindow(
+            data.slots.slice(0, 48 * 2),
+            RECOMMENDED_APPLIANCE.slots,
+          );
+          if (!best) return null;
+          const nowAverage = averageIntensity(data.slots.slice(0, best.length));
+          const savedGrams = Math.round((nowAverage - best.average) * RECOMMENDED_APPLIANCE.kwh);
+          const first = data.slots[best.start];
+          const last = data.slots[best.start + best.length - 1];
+          return {
+            best,
+            savedGrams,
+            first,
+            last,
+          };
+        })()
+      : null;
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-4 py-12 sm:px-8">
-      <header className="rounded-2xl border border-grid bg-background/80 p-6 shadow-sm">
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
+      <header className="rounded-2xl border border-grid bg-background/80 p-5 shadow-sm sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <span className="inline-flex rounded-full border border-grid px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-muted">
             Live UK grid advice
           </span>
         </div>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Find the cleanest time to run your home.
+          Shift your home to cleaner energy.
         </h1>
-        <p className="mt-3 max-w-2xl text-base text-muted">
-          Carbon Helper helps you shift washing, drying, dishwashing and EV
-          charging to periods when Britain&apos;s electricity is greener, so you
-          can cut emissions without changing your routine.
+        <p className="mt-3 max-w-2xl text-base text-muted sm:text-lg">
+          See when Britain&apos;s electricity is greenest and run your washing,
+          drying, dishwashing or EV charging at the right moment.
         </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-grid p-3">
+          <div className="rounded-xl border border-grid bg-background p-3">
             <p className="text-xs uppercase tracking-[0.14em] text-muted">
               Live data
             </p>
             <p className="mt-2 text-lg font-semibold">Half-hourly forecasts</p>
           </div>
-          <div className="rounded-xl border border-grid p-3">
+          <div className="rounded-xl border border-grid bg-background p-3">
             <p className="text-xs uppercase tracking-[0.14em] text-muted">
               Local insight
             </p>
             <p className="mt-2 text-lg font-semibold">Postcode-aware advice</p>
           </div>
-          <div className="rounded-xl border border-grid p-3">
+          <div className="rounded-xl border border-grid bg-background p-3">
             <p className="text-xs uppercase tracking-[0.14em] text-muted">
-              Greener choices
+              Lower impact
             </p>
-            <p className="mt-2 text-lg font-semibold">Lower CO₂, same routine</p>
+            <p className="mt-2 text-lg font-semibold">Less CO₂ without changing plans</p>
           </div>
         </div>
       </header>
@@ -144,6 +179,40 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 .join(" · ")}
             </p>
           </section>
+
+          {summary && (
+            <section className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-grid bg-background p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted">
+                  Current grid
+                </p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums">
+                  {data.slots[0].actual ?? data.slots[0].forecast}
+                </p>
+                <p className="mt-1 text-sm text-muted">gCO₂/kWh right now</p>
+              </div>
+              <div className="rounded-xl border border-grid bg-background p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted">
+                  Best window
+                </p>
+                <p className="mt-2 text-lg font-semibold">
+                  {dayTime(summary.first.from)}
+                </p>
+                <p className="mt-1 text-sm text-muted">
+                  until {dayTime(summary.last.to)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-grid bg-background p-4">
+                <p className="text-xs uppercase tracking-[0.14em] text-muted">
+                  Potential saving
+                </p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums">
+                  {summary.savedGrams.toLocaleString("en-GB")}
+                </p>
+                <p className="mt-1 text-sm text-muted">g CO₂ for a wash cycle</p>
+              </div>
+            </section>
+          )}
 
           <Planner slots={data.slots} initialPrefs={plannerPrefs} />
         </>
