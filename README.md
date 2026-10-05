@@ -12,7 +12,7 @@ Find the greenest time to run your appliances. Carbon Helper reads the half-hour
 - An "Add to calendar" button that downloads the best window as a calendar event with a reminder.
 - The forecast as a bar chart, with the best window highlighted, and as a table.
 
-Appliance energy figures are typical values per cycle; real appliances vary. Choose "Something else…" to enter your own run time and energy use; your appliance choice and those figures are remembered in a cookie.
+Appliance energy figures are typical values per cycle; real appliances vary. Choose "Something else…" to enter your own run time and energy use; your appliance choice, those figures and the "finishing within" setting are remembered in a cookie.
 
 ## Running it
 

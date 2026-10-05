@@ -2,12 +2,31 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_PREFS, parsePlannerPrefs } from "./planner-prefs";
 
 describe("parsePlannerPrefs", () => {
+  it("fills in the horizon for a cookie saved before it was remembered", () => {
+    const raw = JSON.stringify({
+      applianceId: "ev",
+      customSlots: 4,
+      customKwh: "7",
+    });
+    expect(parsePlannerPrefs(raw)).toEqual({
+      applianceId: "ev",
+      customSlots: 4,
+      customKwh: "7",
+      horizon: 24,
+    });
+  });
+
   it("returns the defaults when there is no cookie", () => {
     expect(parsePlannerPrefs(undefined)).toEqual(DEFAULT_PREFS);
   });
 
   it("reads saved choices", () => {
-    const saved = { applianceId: "custom", customSlots: 5, customKwh: "2.4" };
+    const saved = {
+      applianceId: "custom",
+      customSlots: 5,
+      customKwh: "2.4",
+      horizon: 48,
+    };
     expect(parsePlannerPrefs(JSON.stringify(saved))).toEqual(saved);
   });
 
@@ -27,6 +46,7 @@ describe("parsePlannerPrefs", () => {
       applianceId: "<script>",
       customSlots: 99,
       customKwh: "3",
+      horizon: 36,
     });
     expect(parsePlannerPrefs(raw)).toEqual({ ...DEFAULT_PREFS, customKwh: "3" });
     expect(

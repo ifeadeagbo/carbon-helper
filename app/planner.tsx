@@ -6,6 +6,7 @@ import { INDEX_COLOR, type IntensityIndex, type Slot } from "@/lib/carbon";
 import { averageIntensity, findBestWindow } from "@/lib/planner";
 import {
   DEFAULT_PREFS,
+  HORIZONS,
   MAX_CUSTOM_SLOTS,
   type PlannerPrefs,
   savePlannerPrefs,
@@ -23,8 +24,6 @@ const CUSTOM_ID = "custom";
 // Run times offered for a custom appliance, in half-hour slots (30 min to 12 hours).
 const CUSTOM_SLOTS = Array.from({ length: MAX_CUSTOM_SLOTS }, (_, i) => i + 1);
 const MAX_CUSTOM_KWH = 100;
-
-const HORIZONS = [12, 24, 48];
 
 const durationLabel = (slots: number) =>
   slots === 1 ? "30 minutes" : slots === 2 ? "1 hour" : `${slots / 2} hours`;
@@ -63,14 +62,20 @@ export function Planner({
       ? initialPrefs.applianceId
       : DEFAULT_PREFS.applianceId,
   );
-  const [horizon, setHorizon] = useState(24);
+  const [horizon, setHorizon] = useState(initialPrefs.horizon);
   const [hovered, setHovered] = useState<number | null>(null);
 
   const [customSlots, setCustomSlots] = useState(initialPrefs.customSlots);
   const [customKwh, setCustomKwh] = useState(initialPrefs.customKwh);
 
   const remember = (change: Partial<PlannerPrefs>) =>
-    savePlannerPrefs({ applianceId, customSlots, customKwh, ...change });
+    savePlannerPrefs({
+      applianceId,
+      customSlots,
+      customKwh,
+      horizon,
+      ...change,
+    });
 
   const isCustom = applianceId === CUSTOM_ID;
   const parsedKwh = Number(customKwh);
@@ -153,7 +158,10 @@ export function Planner({
           finishing within
           <select
             value={horizon}
-            onChange={(e) => setHorizon(Number(e.target.value))}
+            onChange={(e) => {
+              setHorizon(Number(e.target.value));
+              remember({ horizon: Number(e.target.value) });
+            }}
             className={INPUT_CLASS}
           >
             {HORIZONS.map((h) => (
