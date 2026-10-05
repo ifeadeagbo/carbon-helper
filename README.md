@@ -19,7 +19,7 @@ npm run dev
 
 Then open [http://localhost:3000](http://localhost:3000). No API key or environment variables are needed.
 
-Other scripts: `npm run build`, `npm run start`, `npm run lint`.
+Other scripts: `npm run build`, `npm run start`, `npm run lint`, `npm test`.
 
 ## How it works
 
