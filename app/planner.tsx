@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { calendarHref } from "@/lib/calendar";
 import { INDEX_COLOR, type IntensityIndex, type Slot } from "@/lib/carbon";
 import { averageIntensity, findBestWindow } from "@/lib/planner";
 import {
@@ -164,7 +165,14 @@ export function Planner({
         </label>
       </div>
 
-      {best && <Recommendation slots={visible} best={best} kwh={appliance.kwh} />}
+      {best && (
+        <Recommendation
+          slots={visible}
+          best={best}
+          kwh={appliance.kwh}
+          applianceId={applianceId}
+        />
+      )}
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted">
@@ -254,11 +262,13 @@ function Recommendation({
   slots,
   best,
   kwh,
+  applianceId,
 }: {
   slots: Slot[];
   best: { start: number; length: number; average: number };
   /** Energy per cycle, or null if unknown (grams saved are then left out). */
   kwh: number | null;
+  applianceId: string;
 }) {
   const nowAverage = averageIntensity(slots.slice(0, best.length));
   const savedGrams =
@@ -284,6 +294,15 @@ function Recommendation({
             ? `About ${Math.round(best.average)} gCO₂/kWh instead of ${Math.round(nowAverage)} if you started now (${savedPercent}% less). Enter the energy use, between 0.1 and ${MAX_CUSTOM_KWH} kWh, to see the CO₂ saved.`
             : `About ${Math.round(best.average)} gCO₂/kWh instead of ${Math.round(nowAverage)} if you started now: roughly ${savedGrams.toLocaleString("en-GB")} g CO₂ saved (${savedPercent}% less).`}
       </p>
+      {best.start > 0 && (
+        <a
+          href={calendarHref(first.from, last.to, applianceId)}
+          download="carbon-helper.ics"
+          className="mt-4 inline-block rounded-md border border-grid px-4 py-2 text-sm"
+        >
+          Add to calendar
+        </a>
+      )}
     </div>
   );
 }
