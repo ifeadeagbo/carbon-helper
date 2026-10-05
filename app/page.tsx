@@ -45,7 +45,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           <span className="inline-flex rounded-full border border-grid px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-muted">
             Live UK grid advice
           </span>
-          <span className="text-xs text-muted">No API key needed</span>
         </div>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
           Find the cleanest time to run your home.
