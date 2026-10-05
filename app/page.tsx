@@ -1,11 +1,12 @@
-import Form from "next/form";
-import Link from "next/link";
+import { cookies } from "next/headers";
 import {
   getForecast,
   getGenerationMix,
   getRegionalForecast,
   parseOutwardCode,
 } from "@/lib/carbon";
+import { POSTCODE_COOKIE } from "@/lib/postcode-cookie";
+import { clearPostcode, savePostcode } from "./actions";
 import { INDEX_COLOR, Planner } from "./planner";
 
 /** Loads the forecast for the postcode's region, or for Great Britain (region: null). */
@@ -25,7 +26,11 @@ async function loadData(outwardCode: string | null) {
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   const { postcode } = await searchParams;
-  const query = (Array.isArray(postcode) ? postcode[0] : postcode)?.trim() ?? "";
+  // A postcode in the URL wins over the remembered one.
+  const remembered = (await cookies()).get(POSTCODE_COOKIE)?.value;
+  const query =
+    ((Array.isArray(postcode) ? postcode[0] : postcode) ?? remembered)?.trim() ??
+    "";
   const outwardCode = parseOutwardCode(query);
   const data = await loadData(outwardCode);
 
@@ -38,7 +43,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </p>
       </header>
 
-      <Form action="/" className="flex flex-col gap-2">
+      <form action={savePostcode} className="flex flex-col gap-2">
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-sm text-muted">
             Your postcode
@@ -58,9 +63,13 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             Use my area
           </button>
           {query && (
-            <Link href="/" className="py-2 text-sm text-muted underline">
+            <button
+              type="submit"
+              formAction={clearPostcode}
+              className="cursor-pointer py-2 text-sm text-muted underline"
+            >
               Show all of Great Britain
-            </Link>
+            </button>
           )}
         </div>
         {query && data && data.region === null && (
@@ -71,7 +80,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             Showing Great Britain instead.
           </p>
         )}
-      </Form>
+      </form>
 
       {data ? (
         <>

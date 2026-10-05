@@ -5,7 +5,7 @@ Find the greenest time to run your appliances. Carbon Helper reads the half-hour
 ## What it shows
 
 - The grid's carbon intensity right now (gCO₂/kWh) and the current generation mix.
-- The same for your own region if you enter a postcode (`/?postcode=SW1A`). Regional figures are forecasts; an unrecognised postcode falls back to Great Britain.
+- The same for your own region if you enter a postcode (`/?postcode=SW1A`). Regional figures are forecasts; an unrecognised postcode falls back to Great Britain. A postcode you submit is remembered in a cookie for a year, until you choose "Show all of Great Britain".
 - The cleanest window to start a chosen appliance within the next 12, 24 or 48 hours, and how much CO₂ that saves compared with starting now.
 - The forecast as a bar chart, with the best window highlighted, and as a table.
 
