@@ -11,7 +11,7 @@ Find the greenest time to run your appliances. Carbon Helper reads the half-hour
 - The cleanest window to start a chosen appliance within the next 12, 24 or 48 hours, and how much CO₂ that saves compared with starting now.
 - The forecast as a bar chart, with the best window highlighted, and as a table.
 
-Appliance energy figures are typical values per cycle; real appliances vary. Choose "Something else…" to enter your own run time and energy use.
+Appliance energy figures are typical values per cycle; real appliances vary. Choose "Something else…" to enter your own run time and energy use; your appliance choice and those figures are remembered in a cookie.
 
 ## Running it
 

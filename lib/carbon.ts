@@ -8,6 +8,15 @@ export type IntensityIndex =
   | "high"
   | "very high";
 
+/** CSS colour for each intensity band. */
+export const INDEX_COLOR: Record<IntensityIndex, string> = {
+  "very low": "var(--status-good)",
+  low: "var(--status-good)",
+  moderate: "var(--status-warning)",
+  high: "var(--status-serious)",
+  "very high": "var(--status-critical)",
+};
+
 export type Slot = {
   from: string;
   to: string;

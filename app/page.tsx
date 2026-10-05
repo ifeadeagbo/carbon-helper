@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import {
+  INDEX_COLOR,
   getForecast,
   getGenerationMix,
   getRegionalForecast,
@@ -7,7 +8,8 @@ import {
 } from "@/lib/carbon";
 import { POSTCODE_COOKIE } from "@/lib/postcode-cookie";
 import { clearPostcode, savePostcode } from "./actions";
-import { INDEX_COLOR, Planner } from "./planner";
+import { PLANNER_COOKIE, parsePlannerPrefs } from "@/lib/planner-prefs";
+import { Planner } from "./planner";
 
 /** Loads the forecast for the postcode's region, or for Great Britain (region: null). */
 async function loadData(outwardCode: string | null) {
@@ -27,7 +29,9 @@ async function loadData(outwardCode: string | null) {
 export default async function Home({ searchParams }: PageProps<"/">) {
   const { postcode } = await searchParams;
   // A postcode in the URL wins over the remembered one.
-  const remembered = (await cookies()).get(POSTCODE_COOKIE)?.value;
+  const cookieStore = await cookies();
+  const remembered = cookieStore.get(POSTCODE_COOKIE)?.value;
+  const plannerPrefs = parsePlannerPrefs(cookieStore.get(PLANNER_COOKIE)?.value);
   const query =
     ((Array.isArray(postcode) ? postcode[0] : postcode) ?? remembered)?.trim() ??
     "";
@@ -111,7 +115,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </p>
           </section>
 
-          <Planner slots={data.slots} />
+          <Planner slots={data.slots} initialPrefs={plannerPrefs} />
         </>
       ) : (
         <p>

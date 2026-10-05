@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { IntensityIndex, Slot } from "@/lib/carbon";
+import { INDEX_COLOR, type IntensityIndex, type Slot } from "@/lib/carbon";
 import { averageIntensity, findBestWindow } from "@/lib/planner";
+import {
+  DEFAULT_PREFS,
+  MAX_CUSTOM_SLOTS,
+  type PlannerPrefs,
+  savePlannerPrefs,
+} from "@/lib/planner-prefs";
 
 // Typical figures per cycle; real appliances vary.
 const APPLIANCES = [
@@ -14,7 +20,7 @@ const APPLIANCES = [
 
 const CUSTOM_ID = "custom";
 // Run times offered for a custom appliance, in half-hour slots (30 min to 12 hours).
-const CUSTOM_SLOTS = Array.from({ length: 24 }, (_, i) => i + 1);
+const CUSTOM_SLOTS = Array.from({ length: MAX_CUSTOM_SLOTS }, (_, i) => i + 1);
 const MAX_CUSTOM_KWH = 100;
 
 const HORIZONS = [12, 24, 48];
@@ -24,14 +30,6 @@ const durationLabel = (slots: number) =>
 
 const INPUT_CLASS =
   "rounded-md border border-grid bg-background px-3 py-2 text-base text-foreground";
-
-export const INDEX_COLOR: Record<IntensityIndex, string> = {
-  "very low": "var(--status-good)",
-  low: "var(--status-good)",
-  moderate: "var(--status-warning)",
-  high: "var(--status-serious)",
-  "very high": "var(--status-critical)",
-};
 
 const LEGEND: IntensityIndex[] = ["low", "moderate", "high", "very high"];
 
@@ -50,13 +48,28 @@ const time = (iso: string) => timeFormat.format(new Date(iso));
 const dayTime = (iso: string) =>
   `${dayFormat.format(new Date(iso))} ${time(iso)}`;
 
-export function Planner({ slots }: { slots: Slot[] }) {
-  const [applianceId, setApplianceId] = useState(APPLIANCES[0].id);
+export function Planner({
+  slots,
+  initialPrefs,
+}: {
+  slots: Slot[];
+  /** Choices remembered from an earlier visit. */
+  initialPrefs: PlannerPrefs;
+}) {
+  const [applianceId, setApplianceId] = useState(
+    initialPrefs.applianceId === CUSTOM_ID ||
+      APPLIANCES.some((a) => a.id === initialPrefs.applianceId)
+      ? initialPrefs.applianceId
+      : DEFAULT_PREFS.applianceId,
+  );
   const [horizon, setHorizon] = useState(24);
   const [hovered, setHovered] = useState<number | null>(null);
 
-  const [customSlots, setCustomSlots] = useState(2);
-  const [customKwh, setCustomKwh] = useState("1");
+  const [customSlots, setCustomSlots] = useState(initialPrefs.customSlots);
+  const [customKwh, setCustomKwh] = useState(initialPrefs.customKwh);
+
+  const remember = (change: Partial<PlannerPrefs>) =>
+    savePlannerPrefs({ applianceId, customSlots, customKwh, ...change });
 
   const isCustom = applianceId === CUSTOM_ID;
   const parsedKwh = Number(customKwh);
@@ -83,7 +96,10 @@ export function Planner({ slots }: { slots: Slot[] }) {
           I want to run
           <select
             value={applianceId}
-            onChange={(e) => setApplianceId(e.target.value)}
+            onChange={(e) => {
+              setApplianceId(e.target.value);
+              remember({ applianceId: e.target.value });
+            }}
             className={INPUT_CLASS}
           >
             {APPLIANCES.map((a) => (
@@ -100,7 +116,10 @@ export function Planner({ slots }: { slots: Slot[] }) {
               that runs for
               <select
                 value={customSlots}
-                onChange={(e) => setCustomSlots(Number(e.target.value))}
+                onChange={(e) => {
+                  setCustomSlots(Number(e.target.value));
+                  remember({ customSlots: Number(e.target.value) });
+                }}
                 className={INPUT_CLASS}
               >
                 {CUSTOM_SLOTS.map((n) => (
@@ -119,7 +138,10 @@ export function Planner({ slots }: { slots: Slot[] }) {
                 max={MAX_CUSTOM_KWH}
                 step={0.1}
                 value={customKwh}
-                onChange={(e) => setCustomKwh(e.target.value)}
+                onChange={(e) => {
+                  setCustomKwh(e.target.value);
+                  remember({ customKwh: e.target.value });
+                }}
                 aria-invalid={!customKwhValid}
                 className={`${INPUT_CLASS} w-28`}
               />
