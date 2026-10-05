@@ -40,14 +40,45 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-4 py-12 sm:px-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Carbon Helper</h1>
-        <p className="mt-1 text-muted">
-          Run your appliances when Great Britain&apos;s electricity is cleanest.
+      <header className="rounded-2xl border border-grid bg-background/80 p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex rounded-full border border-grid px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-muted">
+            Live UK grid advice
+          </span>
+          <span className="text-xs text-muted">No API key needed</span>
+        </div>
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+          Find the cleanest time to run your home.
+        </h1>
+        <p className="mt-3 max-w-2xl text-base text-muted">
+          Carbon Helper helps you shift washing, drying, dishwashing and EV
+          charging to periods when Britain&apos;s electricity is greener, so you
+          can cut emissions without changing your routine.
         </p>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-grid p-3">
+            <p className="text-xs uppercase tracking-[0.14em] text-muted">
+              Live data
+            </p>
+            <p className="mt-2 text-lg font-semibold">Half-hourly forecasts</p>
+          </div>
+          <div className="rounded-xl border border-grid p-3">
+            <p className="text-xs uppercase tracking-[0.14em] text-muted">
+              Local insight
+            </p>
+            <p className="mt-2 text-lg font-semibold">Postcode-aware advice</p>
+          </div>
+          <div className="rounded-xl border border-grid p-3">
+            <p className="text-xs uppercase tracking-[0.14em] text-muted">
+              Greener choices
+            </p>
+            <p className="mt-2 text-lg font-semibold">Lower CO₂, same routine</p>
+          </div>
+        </div>
       </header>
 
-      <form action={savePostcode} className="flex flex-col gap-2">
+      <form action={savePostcode} className="flex flex-col gap-2 rounded-2xl border border-grid bg-background/60 p-4">
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-sm text-muted">
             Your postcode
@@ -62,7 +93,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </label>
           <button
             type="submit"
-            className="rounded-md border border-grid px-4 py-2 text-base"
+            className="rounded-md border border-grid bg-foreground px-4 py-2 text-base text-background"
           >
             Use my area
           </button>

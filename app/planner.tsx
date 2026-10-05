@@ -287,7 +287,14 @@ function Recommendation({
 
   return (
     <div className="rounded-lg border border-grid p-5">
-      <p className="text-sm text-muted">Greenest time to start</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted">Greenest time to start</p>
+        {best.start > 0 && savedGrams !== null && (
+          <span className="rounded-full border border-grid bg-background px-2.5 py-1 text-xs text-muted">
+            Save {savedGrams.toLocaleString("en-GB")} g CO₂
+          </span>
+        )}
+      </div>
       <p className="mt-1 text-3xl font-semibold tabular-nums">
         {best.start === 0 ? "Now" : dayTime(first.from)}
         <span className="text-lg font-normal text-muted">
@@ -300,13 +307,13 @@ function Recommendation({
           ? `It won't get cleaner than right now (about ${Math.round(best.average)} gCO₂/kWh).`
           : savedGrams === null
             ? `About ${Math.round(best.average)} gCO₂/kWh instead of ${Math.round(nowAverage)} if you started now (${savedPercent}% less). Enter the energy use, between 0.1 and ${MAX_CUSTOM_KWH} kWh, to see the CO₂ saved.`
-            : `About ${Math.round(best.average)} gCO₂/kWh instead of ${Math.round(nowAverage)} if you started now: roughly ${savedGrams.toLocaleString("en-GB")} g CO₂ saved (${savedPercent}% less).`}
+            : `This is roughly ${savedPercent}% cleaner than starting now, and could save about ${savedGrams.toLocaleString("en-GB")} g CO₂ for this ${applianceId === "ev" ? "EV charge" : "run"}.`}
       </p>
       {best.start > 0 && (
         <a
           href={calendarHref(first.from, last.to, applianceId)}
           download="carbon-helper.ics"
-          className="mt-4 inline-block rounded-md border border-grid px-4 py-2 text-sm"
+          className="mt-4 inline-block rounded-md border border-grid bg-foreground px-4 py-2 text-sm text-background"
         >
           Add to calendar
         </a>
