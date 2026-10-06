@@ -1,5 +1,9 @@
 const API = "https://api.carbonintensity.org.uk";
 const HALF_HOUR_MS = 30 * 60 * 1000;
+// The API publishes new figures every half hour.
+const FORECAST_CACHE_S = 5 * 60;
+// Which region a postcode belongs to all but never changes.
+const REGION_LOOKUP_CACHE_S = 7 * 24 * 60 * 60;
 
 export type IntensityIndex =
   | "very low"
@@ -47,13 +51,19 @@ type ApiRegion = {
   data: (ApiSlot & { generationmix: FuelShare[] })[];
 };
 
-/** Returns null when the API has no data for the path (it answers 200 with a `null` body). */
-async function get<T>(path: string): Promise<T | null> {
+/**
+ * Returns null when the API has no data for the path: it answers 200 with a
+ * `null` body, or with the status given as `missingStatus`.
+ */
+async function get<T>(
+  path: string,
+  { revalidate = FORECAST_CACHE_S, missingStatus = 0 } = {},
+): Promise<T | null> {
   const res = await fetch(`${API}${path}`, {
     headers: { Accept: "application/json" },
-    // The API publishes new figures every half hour.
-    next: { revalidate: 300 },
+    next: { revalidate },
   });
+  if (res.status === missingStatus) return null;
   if (!res.ok) {
     throw new Error(`Carbon Intensity API ${path} returned ${res.status}`);
   }
@@ -118,8 +128,17 @@ export async function getRegionalForecast(
   outwardCode: string,
   now = new Date(),
 ): Promise<RegionalForecast | null> {
+  // Look the region up first and fetch the forecast by region, so everyone in
+  // the same region shares one cached forecast whatever their postcode.
+  const lookup = await get<{ regionid: number }[]>(
+    `/regional/postcode/${encodeURIComponent(outwardCode)}`,
+    { revalidate: REGION_LOOKUP_CACHE_S, missingStatus: 400 },
+  );
+  const regionId = lookup?.[0]?.regionid;
+  if (regionId === undefined) return null;
+
   const region = await get<ApiRegion>(
-    `/regional/intensity/${slotStart(now)}/fw48h/postcode/${encodeURIComponent(outwardCode)}`,
+    `/regional/intensity/${slotStart(now)}/fw48h/regionid/${regionId}`,
   );
   if (!region) return null;
   const current = region.data.find((slot) => new Date(slot.to) > now);

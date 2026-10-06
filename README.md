@@ -27,7 +27,7 @@ Other scripts: `npm run build`, `npm run start`, `npm run lint`, `npm test`.
 
 ## How it works
 
-- `lib/carbon.ts` fetches the national and regional forecasts and generation mix from the [Carbon Intensity API](https://carbonintensity.org.uk), run by the National Energy System Operator. Responses are cached for five minutes.
+- `lib/carbon.ts` fetches the national and regional forecasts and generation mix from the [Carbon Intensity API](https://carbonintensity.org.uk), run by the National Energy System Operator. Responses are cached for five minutes. A postcode is first resolved to one of the 14 regions (cached for a week) and the forecast is fetched per region, so visitors across a region share one cached forecast.
 - `lib/planner.ts` finds the run of consecutive half-hour slots with the lowest average forecast intensity.
 - `app/page.tsx` renders the current figures on the server; `app/planner.tsx` is the interactive planner.
 
