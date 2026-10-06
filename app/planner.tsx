@@ -97,6 +97,15 @@ export function Planner({
 
   return (
     <section className="flex flex-col gap-6">
+      {best && (
+        <Summary
+          slots={visible}
+          best={best}
+          kwh={appliance.kwh}
+          applianceId={applianceId}
+        />
+      )}
+
       <div className="flex flex-wrap gap-4">
         <label className="flex flex-col gap-1 text-sm text-muted">
           I want to run
@@ -266,24 +275,74 @@ export function Planner({
   );
 }
 
-function Recommendation({
-  slots,
-  best,
-  kwh,
-  applianceId,
-}: {
+type WindowProps = {
   slots: Slot[];
   best: { start: number; length: number; average: number };
   /** Energy per cycle, or null if unknown (grams saved are then left out). */
   kwh: number | null;
   applianceId: string;
-}) {
+};
+
+/** Compares the best window with starting straight away. */
+function windowStats({ slots, best, kwh }: WindowProps) {
   const nowAverage = averageIntensity(slots.slice(0, best.length));
-  const savedGrams =
-    kwh === null ? null : Math.round((nowAverage - best.average) * kwh);
-  const savedPercent = Math.round((1 - best.average / nowAverage) * 100);
-  const first = slots[best.start];
-  const last = slots[best.start + best.length - 1];
+  return {
+    nowAverage,
+    savedGrams:
+      kwh === null ? null : Math.round((nowAverage - best.average) * kwh),
+    savedPercent: Math.round((1 - best.average / nowAverage) * 100),
+    first: slots[best.start],
+    last: slots[best.start + best.length - 1],
+  };
+}
+
+const CARD_CLASS = "rounded-xl border border-grid bg-background p-4";
+const CARD_LABEL_CLASS = "text-xs uppercase tracking-[0.14em] text-muted";
+
+/** At-a-glance cards for the appliance and horizon chosen in the planner. */
+function Summary(props: WindowProps) {
+  const { best, applianceId } = props;
+  const { nowAverage, savedGrams, first, last } = windowStats(props);
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <div className={CARD_CLASS}>
+        <p className={CARD_LABEL_CLASS}>Best window</p>
+        <p className="mt-2 text-lg font-semibold tabular-nums">
+          {best.start === 0 ? "Now" : dayTime(first.from)}
+        </p>
+        <p className="mt-1 text-sm text-muted">until {time(last.to)}</p>
+      </div>
+      <div className={CARD_CLASS}>
+        <p className={CARD_LABEL_CLASS}>Grid in that window</p>
+        <p className="mt-2 text-2xl font-semibold tabular-nums">
+          {Math.round(best.average)}
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {best.start === 0
+            ? "gCO₂/kWh, the cleanest it gets"
+            : `gCO₂/kWh, against ${Math.round(nowAverage)} if you start now`}
+        </p>
+      </div>
+      <div className={CARD_CLASS}>
+        <p className={CARD_LABEL_CLASS}>Potential saving</p>
+        <p className="mt-2 text-2xl font-semibold tabular-nums">
+          {savedGrams === null ? "–" : savedGrams.toLocaleString("en-GB")}
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {savedGrams === null
+            ? "enter the energy use to see it"
+            : `g CO₂ for this ${applianceId === "ev" ? "EV charge" : "run"}`}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Recommendation(props: WindowProps) {
+  const { best, applianceId } = props;
+  const { nowAverage, savedGrams, savedPercent, first, last } =
+    windowStats(props);
 
   return (
     <div className="rounded-lg border border-grid p-5">

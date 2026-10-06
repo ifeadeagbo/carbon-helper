@@ -8,24 +8,8 @@ import {
 } from "@/lib/carbon";
 import { POSTCODE_COOKIE } from "@/lib/postcode-cookie";
 import { clearPostcode, savePostcode } from "./actions";
-import { averageIntensity, findBestWindow } from "@/lib/planner";
 import { PLANNER_COOKIE, parsePlannerPrefs } from "@/lib/planner-prefs";
 import { Planner } from "./planner";
-
-const RECOMMENDED_APPLIANCE = {
-  id: "washer",
-  label: "Washing machine",
-  slots: 3,
-  kwh: 0.8,
-};
-
-const dayTime = (iso: string) =>
-  new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/London",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(iso));
 
 /** Loads the forecast for the postcode's region, or for Great Britain (region: null). */
 async function loadData(outwardCode: string | null) {
@@ -53,26 +37,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     "";
   const outwardCode = parseOutwardCode(query);
   const data = await loadData(outwardCode);
-  const summary =
-    data && data.slots.length > 0
-      ? (() => {
-          const best = findBestWindow(
-            data.slots.slice(0, 48 * 2),
-            RECOMMENDED_APPLIANCE.slots,
-          );
-          if (!best) return null;
-          const nowAverage = averageIntensity(data.slots.slice(0, best.length));
-          const savedGrams = Math.round((nowAverage - best.average) * RECOMMENDED_APPLIANCE.kwh);
-          const first = data.slots[best.start];
-          const last = data.slots[best.start + best.length - 1];
-          return {
-            best,
-            savedGrams,
-            first,
-            last,
-          };
-        })()
-      : null;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
@@ -179,40 +143,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 .join(" · ")}
             </p>
           </section>
-
-          {summary && (
-            <section className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-grid bg-background p-4">
-                <p className="text-xs uppercase tracking-[0.14em] text-muted">
-                  Current grid
-                </p>
-                <p className="mt-2 text-2xl font-semibold tabular-nums">
-                  {data.slots[0].actual ?? data.slots[0].forecast}
-                </p>
-                <p className="mt-1 text-sm text-muted">gCO₂/kWh right now</p>
-              </div>
-              <div className="rounded-xl border border-grid bg-background p-4">
-                <p className="text-xs uppercase tracking-[0.14em] text-muted">
-                  Best window
-                </p>
-                <p className="mt-2 text-lg font-semibold">
-                  {dayTime(summary.first.from)}
-                </p>
-                <p className="mt-1 text-sm text-muted">
-                  until {dayTime(summary.last.to)}
-                </p>
-              </div>
-              <div className="rounded-xl border border-grid bg-background p-4">
-                <p className="text-xs uppercase tracking-[0.14em] text-muted">
-                  Potential saving
-                </p>
-                <p className="mt-2 text-2xl font-semibold tabular-nums">
-                  {summary.savedGrams.toLocaleString("en-GB")}
-                </p>
-                <p className="mt-1 text-sm text-muted">g CO₂ for a wash cycle</p>
-              </div>
-            </section>
-          )}
 
           <Planner slots={data.slots} initialPrefs={plannerPrefs} />
         </>
