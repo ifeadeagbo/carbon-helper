@@ -27,3 +27,24 @@ export function findBestWindow(slots: Slot[], length: number): Window | null {
   }
   return { start: bestStart, length, average: bestSum / length };
 }
+
+/** Compares the best window with starting straight away. `kwh` is null when the energy use isn't known. */
+export function windowStats({
+  slots,
+  best,
+  kwh,
+}: {
+  slots: Slot[];
+  best: Window;
+  kwh: number | null;
+}) {
+  const nowAverage = averageIntensity(slots.slice(0, best.length));
+  return {
+    nowAverage,
+    savedGrams:
+      kwh === null ? null : Math.round((nowAverage - best.average) * kwh),
+    savedPercent: Math.round((1 - best.average / nowAverage) * 100),
+    first: slots[best.start],
+    last: slots[best.start + best.length - 1],
+  };
+}

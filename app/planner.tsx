@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { APPLIANCES, CUSTOM_ID, MAX_CUSTOM_KWH } from "@/lib/appliances";
 import { calendarHref } from "@/lib/calendar";
 import { INDEX_COLOR, type IntensityIndex, type Slot } from "@/lib/carbon";
-import { averageIntensity, findBestWindow } from "@/lib/planner";
+import { findBestWindow, windowStats } from "@/lib/planner";
 import {
   DEFAULT_PREFS,
   HORIZONS,
@@ -12,18 +13,8 @@ import {
   savePlannerPrefs,
 } from "@/lib/planner-prefs";
 
-// Typical figures per cycle; real appliances vary.
-const APPLIANCES = [
-  { id: "washer", label: "Washing machine", slots: 3, kwh: 0.8 },
-  { id: "dishwasher", label: "Dishwasher", slots: 4, kwh: 1.2 },
-  { id: "dryer", label: "Tumble dryer", slots: 3, kwh: 2.5 },
-  { id: "ev", label: "EV charge (4h at 7kW)", slots: 8, kwh: 28 },
-];
-
-const CUSTOM_ID = "custom";
 // Run times offered for a custom appliance, in half-hour slots (30 min to 12 hours).
 const CUSTOM_SLOTS = Array.from({ length: MAX_CUSTOM_SLOTS }, (_, i) => i + 1);
-const MAX_CUSTOM_KWH = 100;
 
 const durationLabel = (slots: number) =>
   slots === 1 ? "30 minutes" : slots === 2 ? "1 hour" : `${slots / 2} hours`;
@@ -282,19 +273,6 @@ type WindowProps = {
   kwh: number | null;
   applianceId: string;
 };
-
-/** Compares the best window with starting straight away. */
-function windowStats({ slots, best, kwh }: WindowProps) {
-  const nowAverage = averageIntensity(slots.slice(0, best.length));
-  return {
-    nowAverage,
-    savedGrams:
-      kwh === null ? null : Math.round((nowAverage - best.average) * kwh),
-    savedPercent: Math.round((1 - best.average / nowAverage) * 100),
-    first: slots[best.start],
-    last: slots[best.start + best.length - 1],
-  };
-}
 
 const CARD_CLASS = "rounded-xl border border-grid bg-background p-4";
 const CARD_LABEL_CLASS = "text-xs uppercase tracking-[0.14em] text-muted";

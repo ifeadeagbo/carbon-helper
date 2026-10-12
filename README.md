@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Then open [http://localhost:3000](http://localhost:3000). No API key or environment variables are needed.
+Then open [http://localhost:3000](http://localhost:3000). The planner needs no API key or environment variables. The assistant at `/chat` needs an Anthropic API key in `ANTHROPIC_API_KEY`, for example in `.env.local`.
 
 Other scripts: `npm run build`, `npm run start`, `npm run lint`, `npm test`.
 
@@ -29,6 +29,7 @@ Other scripts: `npm run build`, `npm run start`, `npm run lint`, `npm test`.
 
 - `lib/carbon.ts` fetches the national and regional forecasts and generation mix from the [Carbon Intensity API](https://carbonintensity.org.uk), run by the National Energy System Operator. Responses are cached for five minutes. A postcode is first resolved to one of the 14 regions (cached for a week) and the forecast is fetched per region, so visitors across a region share one cached forecast.
 - `lib/planner.ts` finds the run of consecutive half-hour slots with the lowest average forecast intensity.
+- `lib/agent.ts` is the assistant's loop: it calls Claude, runs the tools Claude asks for from `lib/agent-tools.ts`, and stops at the limits set in `LIMITS`. `app/api/chat/route.ts` exposes it to the chat page.
 - `app/page.tsx` renders the current figures on the server; `app/planner.tsx` is the interactive planner.
 
 Built with Next.js 16, React 19 and Tailwind CSS 4.
