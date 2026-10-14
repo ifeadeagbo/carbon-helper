@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Then open [http://localhost:3000](http://localhost:3000). The planner needs no API key or environment variables. The assistant at `/chat` needs an Anthropic API key in `ANTHROPIC_API_KEY`, for example in `.env.local`.
+Then open [http://localhost:3000](http://localhost:3000). The planner needs no API key or environment variables. The assistant at `/chat` needs an Anthropic API key in `ANTHROPIC_API_KEY`, for example in `.env.local`. In production it also needs an Upstash Redis database (`UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, or the `KV_REST_API_` names Vercel's integration adds), which counts questions: 10 per visitor and 50 for the whole site each day. Without one, production refuses every question; in development the limits are simply off.
 
 Other scripts: `npm run build`, `npm run start`, `npm run lint`, `npm test`.
 

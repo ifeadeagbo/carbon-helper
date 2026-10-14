@@ -1,5 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { InvalidConversation, runAgent } from "@/lib/agent";
+import { InvalidConversation, LIMITS, runAgent, toMessages } from "@/lib/agent";
+import {
+  VISITOR_DAILY_LIMIT,
+  chatLimiters,
+  checkChatLimits,
+  visitorId,
+} from "@/lib/rate-limit";
 
 // How long the host lets this function run, in seconds.
 export const maxDuration = 60;
@@ -11,6 +17,17 @@ const MAX_BODY_CHARS = 200_000;
 const error = (message: string, status: number) =>
   Response.json({ error: message }, { status });
 
+const limitError = {
+  visitor: () =>
+    error(
+      `You've asked ${VISITOR_DAILY_LIMIT} questions today, which is the daily limit. Try again tomorrow.`,
+      429,
+    ),
+  site: () =>
+    error("HailplusAI has answered all it can for today. Try again tomorrow.", 429),
+  unavailable: () => error("HailplusAI isn't available right now.", 503),
+};
+
 /** Answers the last message of the conversation in the request body. */
 export async function POST(request: Request) {
   const raw = await request.text();
@@ -20,6 +37,24 @@ export async function POST(request: Request) {
     body = JSON.parse(raw);
   } catch {
     return error("Send JSON.", 400);
+  }
+
+  try {
+    // Check the conversation first, so a malformed request isn't counted.
+    toMessages(body?.messages, LIMITS);
+  } catch (cause) {
+    if (cause instanceof InvalidConversation) return error(cause.message, 400);
+    throw cause;
+  }
+
+  const limiters = chatLimiters();
+  if (limiters) {
+    const check = await checkChatLimits(visitorId(request.headers), limiters);
+    if (!check.allowed) return limitError[check.reason]();
+  } else if (process.env.NODE_ENV === "production") {
+    // Never answer in production with nothing counting the questions.
+    console.error("Chat refused: the rate limit store isn't configured.");
+    return limitError.unavailable();
   }
 
   try {
